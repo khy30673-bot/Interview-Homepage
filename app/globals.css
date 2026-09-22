@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* ──────────────────────────────────────────────────────────────────────────
    shadcn/ui — Nova preset / base color Neutral / CSS variables
@@ -12,6 +13,12 @@
 @theme inline {
   --font-sans: var(--font-noto-sans-kr), "Pretendard", "Apple SD Gothic Neo",
     -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+
+  /* PRD §6.9 — 3D 마퀴(수직/수평)와 워드마크 밑줄 점멸 애니메이션.
+     --duration / --gap 은 Marquee 컴포넌트가 인스턴스마다 주입합니다. */
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  --animate-blink: blink 1.2s step-end infinite;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -82,6 +89,49 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PRD §6.9 — keyframes
+   ────────────────────────────────────────────────────────────────────────── */
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+  }
+}
+
+@keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+  }
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* PRD §2.1 모션 배려 — reduce 설정 시 마퀴와 밑줄 점멸을 모두 정지시킵니다.
+   (커서 궤적은 CursorTrail 컴포넌트가 JS에서 직접 처리합니다.) */
+@media (prefers-reduced-motion: reduce) {
+  .animate-blink,
+  [class*="animate-marquee"] {
+    animation: none !important;
+    opacity: 1;
+  }
 }
 
 @layer base {
