@@ -60,17 +60,23 @@ function compareTags(a: TagCount, b: TagCount, order: string[]): number {
   return collator.compare(a.tag, b.tag);
 }
 
-let warned = false;
+/**
+ * 마지막으로 경고한 태그 목록. 같은 내용을 반복해서 찍지 않되, 개발 중에
+ * 태그를 고치면 다시 알려 주기 위해 "찍었다/안 찍었다"가 아니라 내용을 기억합니다.
+ */
+let lastWarned: string | null = null;
 
 /**
  * PRD §4.3: 사이트 전체에서 1번만 쓰인 태그는 **경고만** 출력합니다 (오타 감지용).
  * 빌드를 세우지는 않습니다 — 처음 보는 태그는 통과시키는 게 정책이기 때문입니다.
  */
 function warnSingleUseTags(counts: Map<string, number>, where: Map<string, string[]>) {
-  if (warned) return;
-  warned = true;
-
   const singles = [...counts.entries()].filter(([, n]) => n === 1);
+
+  const signature = singles.map(([tag]) => tag).join("\u0000");
+  if (signature === lastWarned) return;
+  lastWarned = signature;
+
   if (singles.length === 0) return;
 
   const lines = singles.map(([tag]) => {

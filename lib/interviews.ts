@@ -47,6 +47,12 @@ const matterOptions = {
   },
 };
 
+/**
+ * 빌드 때는 파일을 한 번만 읽으면 되므로 캐시합니다.
+ * 개발 중에는 캐시하지 않습니다 — 캐시하면 MDX를 고치고 새로고침해도 이전
+ * 내용이 그대로 나와서, PRD §4.4-2의 "수정하면 바로 반영된다"가 깨집니다.
+ */
+const CACHE_ENABLED = process.env.NODE_ENV === "production";
 let cache: Interview[] | null = null;
 
 /**
@@ -55,12 +61,9 @@ let cache: Interview[] | null = null;
  * published 여부와 관계없이 전부 돌려주며, 걸러내는 일은 호출하는 쪽에서 합니다.
  */
 function loadAll(): Interview[] {
-  if (cache) return cache;
+  if (CACHE_ENABLED && cache) return cache;
 
-  if (!fs.existsSync(POSTS_DIR)) {
-    cache = [];
-    return cache;
-  }
+  if (!fs.existsSync(POSTS_DIR)) return [];
 
   const files = fs
     .readdirSync(POSTS_DIR)
@@ -108,8 +111,8 @@ function loadAll(): Interview[] {
     });
   }
 
-  cache = interviews;
-  return cache;
+  if (CACHE_ENABLED) cache = interviews;
+  return interviews;
 }
 
 function truncate(text: string, max: number): string {
