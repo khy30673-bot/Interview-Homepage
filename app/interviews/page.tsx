@@ -30,9 +30,9 @@ export default function InterviewsPage() {
 
   return (
     <>
-      {/* 상단 3D 마퀴 — md 미만에서는 숨겨집니다.
-          같은 링크가 아래 목록에 전부 있으므로 기능 손실은 없습니다. */}
-      <div className="hidden pt-6 md:block">
+      {/* 상단 마퀴 — PC는 3D 세로 2컬럼, 모바일은 평면 가로 1줄.
+          aria-hidden 장식이며 키보드·스크린리더 경로는 아래 목록입니다. */}
+      <div className="pt-4 md:pt-6">
         <InterviewMarquee interviews={interviews} />
       </div>
 

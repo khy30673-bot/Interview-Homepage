@@ -61,7 +61,7 @@
 ### 2.1 공통 비기능 요구
 
 - **반응형** — 모바일 1열 / 태블릿 2열 / PC 3열. 본문 최대폭 `max-w-3xl`, 본문 폰트 17~18px
-- **모바일 대응** — 3D 마퀴는 `md` 미만에서 숨김 (성능·터치 가독성)
+- **모바일 대응** — 마퀴는 `md` 미만에서 3D를 뺀 **가로 1줄**로 대체 (세로 마퀴는 페이지 스크롤과 방향이 겹쳐 금지). 상세는 `§S-2`
 - **모션 배려** — `prefers-reduced-motion: reduce` 시 마퀴·궤적·밑줄 점멸 모두 정지
 - **키보드 접근** — 모든 인터랙티브 요소가 Tab으로 도달 가능하고 focus ring 유지
 
@@ -76,7 +76,7 @@
   │   흰 배경 + 블루·퍼플 궤적 + "진로를 재탐색합니다" + LiquidButton
   ↓
   /interviews  대상 선택 화면
-  │   [3D 마퀴: 대상 카드]  ← md 이상에서만
+  │   [마퀴: 대상 카드]  ← PC는 3D 세로, 모바일은 평면 가로
   │   [목록: 아바타·이름·역할·제목·날짜·태그]
   ↓  (카드 클릭)
   /interviews/[slug]  인터뷰 상세
@@ -111,18 +111,43 @@
 
 **라우트** `/interviews` · **렌더링** Static (빌드 시 MDX 전체 로드)
 
-#### 상단 — 3D 마퀴 (`<InterviewMarquee />`)
+#### 상단 — 마퀴 (`<InterviewMarquee />`)
+
+**PC와 모바일이 서로 다른 형태입니다.** 모바일에서 숨기지 않고, 3D를 뺀 가로 마퀴로 대체합니다.
+
+**PC (`md` 이상) — 3D 세로 2컬럼**
 
 | 구성 요소 | 사양 |
 |---|---|
-| 컨테이너 | `h-96 w-full [perspective:300px]`, `overflow-hidden`, 3D 기울임 transform |
-| 마퀴 컬럼 | `Marquee vertical` **2컬럼**, `reverse` 교차, `pauseOnHover`, `repeat={4}` |
+| 컨테이너 | `w-full`, 높이 **384px**, `perspective: 300px`, `overflow-hidden` |
+| 기울임 | `translateX(-40px) translateZ(-70px) rotateX(18deg) rotateY(-9deg) rotateZ(16deg)` |
+| 마퀴 컬럼 | `Marquee vertical` **2컬럼**, 한쪽은 `reverse`, `pauseOnHover`, `repeat={4}` |
 | 카드 | `<IntervieweeCard />` — 아바타(size-9) + 이름 + 역할 + 대표 문장(`pullQuote`) |
+| 카드 크기 | 폭 **212px**, 카드 간격 **14px** |
+| 주기 | **34s** linear |
+| 페이드 | 상하 **26%**, 좌우 **22%** — **모두 `pointer-events-none` 필수** |
+
+**모바일 (`md` 미만) — 평면 가로 1줄**
+
+| 구성 요소 | 사양 |
+|---|---|
+| 컨테이너 | `w-full`, 높이 **142px**, `overflow-hidden` |
+| 3D | **없음.** `perspective`와 `rotate` 모두 걸지 않습니다 |
+| 마퀴 | 가로 1줄, `repeat={4}` |
+| 카드 크기 | 폭 **172px**, 카드 간격 **10px** |
+| 주기 | **30s** linear |
+| 페이드 | 좌우 **38px**만 (상하 없음) — `pointer-events-none` |
+
+> **세로 마퀴 금지.** 모바일에서 세로로 흐르면 페이지 스크롤과 방향이 겹쳐 조작이 헷갈립니다.
+
+**공통**
+
+| 항목 | 사양 |
+|---|---|
 | 카드 동작 | 카드 전체를 `<Link href={`/interviews/${slug}`}>`로 감쌈 |
-| 페이드 | 상하좌우 `bg-gradient-to-* from-background` 오버레이 4개 — **모두 `pointer-events-none` 필수** |
-| 반응형 | 최상위에 `hidden md:flex` |
-| 모션 | `motion-reduce:[animation-play-state:paused]` |
-| 접근성 | `ariaLabel="인터뷰 대상 목록"`. 동일 링크가 하단 목록에 반드시 존재 |
+| 모션 | `prefers-reduced-motion: reduce` 시 정지 (`§6.9`) |
+| 배터리 | `IntersectionObserver`로 화면 밖에 나가면 `animation-play-state: paused`, 다시 들어오면 `running` |
+| 접근성 | 마퀴 전체를 **`aria-hidden`** 으로 보조기술에서 제외하고, 카드 링크에 **`tabIndex={-1}`**. `repeat`로 같은 링크가 여러 벌 복제되는 데다 일부는 잘려 보이지도 않으므로, 키보드·스크린리더의 접근 경로는 **하단 목록 하나로 모읍니다.** 마퀴 카드는 복제본이라 정보 가치가 없습니다 |
 
 > ⚠ **가장 실패하기 쉬운 지점.** 3D transform + 그라디언트 오버레이 + 무한 애니메이션 위에서 링크를 클릭해야 합니다. 구현 직후 실제 클릭 테스트를 하세요.
 
@@ -622,7 +647,7 @@ npm install lucide-react
 | 크기 | 데모는 `max-w-[800px]` 고정 → **`w-full`** |
 | 클릭 | 각 카드를 `<Link>`로 감쌈 |
 | 오버레이 | 4개 모두 `pointer-events-none` **필수** |
-| 반응형 | 최상위 `hidden md:flex` |
+| 반응형 | PC는 3D 세로 2컬럼, 모바일은 3D 없는 가로 1줄 (`§S-2`) |
 | 오타 수정 | 데모의 `text-econdary-foreground` → **`text-secondary-foreground`** |
 | 이미지 | 데모의 `cdn.21st.dev` URL 전부 제거. `public/avatars/` 로컬 파일만 사용 |
 | 아바타 alt | `` `${name} 프로필 이미지` `` |
@@ -874,13 +899,14 @@ import { mdxComponents } from "@/components/mdx/mdx-components";
 
 ### 반응형
 
-- [ ] 360px: 마퀴 숨김, 목록 1열, 가로 스크롤 없음
-- [ ] 768px: 목록 2열, 마퀴 노출
+- [ ] 360px: 가로 마퀴 노출(3D 없음), 세로 스크롤과 충돌 없음, 목록 1열, 가로 스크롤 없음
+- [ ] 768px: 목록 2열, 3D 세로 마퀴 노출
 - [ ] 1440px: 목록 3열, 본문 `max-w-3xl` 유지
 
 ### 접근성
 
 - [ ] 키보드 Tab만으로 입장 → 목록 → 상세 도달
+- [ ] 키보드 Tab 3번 이내로 목록 첫 항목 도달 (PC·모바일 공통)
 - [ ] `prefers-reduced-motion` 켜면 마퀴·궤적·밑줄 모두 정지
 - [ ] 아바타 이미지에 `alt` 존재
 - [ ] 버튼 focus ring 표시

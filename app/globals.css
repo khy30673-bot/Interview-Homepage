@@ -124,6 +124,13 @@
   }
 }
 
+/* 배터리 대비 — 마퀴가 화면 밖으로 나가면 애니메이션을 멈춥니다.
+   MarqueeViewport가 IntersectionObserver로 data-in-view를 토글합니다.
+   무한 애니메이션은 보이지 않아도 합성을 계속 일으켜 배터리를 씁니다. */
+[data-in-view="false"] [class*="animate-marquee"] {
+  animation-play-state: paused;
+}
+
 /* PRD §2.1 모션 배려 — reduce 설정 시 마퀴와 밑줄 점멸을 모두 정지시킵니다.
    (커서 궤적은 CursorTrail 컴포넌트가 JS에서 직접 처리합니다.) */
 @media (prefers-reduced-motion: reduce) {

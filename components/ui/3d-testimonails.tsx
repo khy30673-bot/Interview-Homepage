@@ -104,7 +104,12 @@ export function Marquee({
       aria-label={ariaLabel}
       aria-live={ariaLive}
       role={ariaRole}
-      tabIndex={0}
+      // [원본과 다른 점] 원본은 tabIndex={0} 고정이라 바깥에서 덮어쓸 수 없었습니다.
+      // 이 사이트는 마퀴를 aria-hidden 장식으로 두는데, aria-hidden 안에
+      // 포커스 가능한 요소가 남아 있으면 그 자체가 접근성 위반입니다.
+      // (키보드로는 닿지만 스크린리더에는 안 보이는 유령 포커스가 생깁니다.)
+      // 기본값 0은 그대로라 다른 사용처의 동작은 바뀌지 않습니다.
+      tabIndex={props.tabIndex ?? 0}
     >
       {content}
     </div>
