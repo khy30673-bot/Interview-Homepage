@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { InterviewList } from "@/components/interview-list";
+import { InterviewMarquee } from "@/components/interview-marquee";
 import { getAllInterviews } from "@/lib/interviews";
 import { orderTags } from "@/lib/tags";
 import { siteConfig } from "@/site.config";
@@ -28,8 +29,16 @@ export default function InterviewsPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-10 md:py-14">
-      <InterviewList interviews={interviews} tagsBySlug={tagsBySlug} />
-    </div>
+    <>
+      {/* 상단 3D 마퀴 — md 미만에서는 숨겨집니다.
+          같은 링크가 아래 목록에 전부 있으므로 기능 손실은 없습니다. */}
+      <div className="hidden pt-6 md:block">
+        <InterviewMarquee interviews={interviews} />
+      </div>
+
+      <div className="mx-auto w-full max-w-6xl px-4 py-10 md:pt-4 md:pb-16">
+        <InterviewList interviews={interviews} tagsBySlug={tagsBySlug} />
+      </div>
+    </>
   );
 }
