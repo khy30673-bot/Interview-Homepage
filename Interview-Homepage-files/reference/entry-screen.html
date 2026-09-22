@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>입장 화면</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden}
+  body{
+    background:#ffffff;
+    font-family:"Pretendard","Apple SD Gothic Neo",-apple-system,BlinkMacSystemFont,"Malgun Gothic","맑은 고딕",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  #trail{position:fixed;inset:0;z-index:0;display:block}
+
+  .stage{
+    position:relative;z-index:2;height:100%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:44px;
+    pointer-events:none;padding:0 16px;
+  }
+
+  /* 워드마크 — 재탐색: 굵은 검정 / 밑줄 깜빡임 */
+  .wordmark{
+    font-size:clamp(28px,6vw,54px);
+    font-weight:400;
+    letter-spacing:-.025em;
+    color:#3a352f;
+    text-align:center;line-height:1.35;
+  }
+  .wordmark em{
+    position:relative;font-style:normal;
+    font-weight:900;color:#000000;
+  }
+  .wordmark em .ul{
+    position:absolute;left:0;bottom:-.15em;width:100%;height:.065em;min-height:3px;
+    background:#000000;animation:blink 1.2s step-end infinite;
+  }
+  @keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+  @media(prefers-reduced-motion:reduce){.wordmark em .ul{animation:none}}
+
+  /* LiquidButton */
+  .liquid{
+    position:relative;pointer-events:auto;
+    height:60px;padding:0 44px;border:0;background:transparent;
+    border-radius:999px;cursor:pointer;font-family:inherit;
+    font-size:16.5px;font-weight:500;color:#1b1a18;transition:transform .3s;
+  }
+  .liquid:hover{transform:scale(1.05)}
+  .liquid:active{transform:scale(.98)}
+  .liquid:focus-visible{outline:2px solid #000;outline-offset:4px}
+  .liquid .ring{
+    position:absolute;inset:0;border-radius:999px;pointer-events:none;
+    box-shadow:
+      0 0 6px rgba(0,0,0,.03), 0 2px 6px rgba(0,0,0,.08),
+      inset 3px 3px .5px -3px rgba(0,0,0,.9),
+      inset -3px -3px .5px -3px rgba(0,0,0,.85),
+      inset 1px 1px 1px -.5px rgba(0,0,0,.6),
+      inset -1px -1px 1px -.5px rgba(0,0,0,.6),
+      inset 0 0 6px 6px rgba(0,0,0,.12),
+      inset 0 0 2px 2px rgba(0,0,0,.06),
+      0 0 12px rgba(255,255,255,.15);
+  }
+  .liquid .glass{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    isolation:isolate;z-index:-10;overflow:hidden;border-radius:999px;
+    -webkit-backdrop-filter:url("#container-glass");
+    backdrop-filter:url("#container-glass");
+  }
+  .liquid .label{position:relative;z-index:10;pointer-events:none}
+
+  .copyright{
+    position:fixed;bottom:18px;left:0;right:0;text-align:center;z-index:2;
+    font-size:11.5px;color:rgba(40,38,34,.4);pointer-events:none;
+  }
+  .hint{
+    position:fixed;bottom:46px;left:0;right:0;text-align:center;z-index:2;
+    font-size:12.5px;color:rgba(40,38,34,.35);pointer-events:none;transition:opacity .6s;
+  }
+</style>
+</head>
+<body>
+
+<svg style="position:absolute;width:0;height:0" aria-hidden="true">
+  <defs>
+    <filter id="container-glass" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05 0.05" numOctaves="1" seed="1" result="turbulence"/>
+      <feGaussianBlur in="turbulence" stdDeviation="2" result="blurredNoise"/>
+      <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="70" xChannelSelector="R" yChannelSelector="B" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="4" result="finalBlur"/>
+      <feComposite in="finalBlur" in2="finalBlur" operator="over"/>
+    </filter>
+  </defs>
+</svg>
+
+<canvas id="trail"></canvas>
+
+<div class="stage">
+  <div class="wordmark">진로를 <em>재탐색<span class="ul"></span></em>합니다</div>
+  <button class="liquid">
+    <span class="glass"></span><span class="ring"></span>
+    <span class="label">인터뷰 보러 가기</span>
+  </button>
+</div>
+
+<div class="hint" id="hint">마우스를 움직여 보세요</div>
+<div class="copyright">© 2026 희연</div>
+
+<script>
+(function(){
+  const cv = document.getElementById('trail');
+  const ctx = cv.getContext('2d');
+  const hint = document.getElementById('hint');
+
+  const BG = '#ffffff';
+  // 블루 → 퍼플
+  const A = [228, 95, 58];
+  const B = [276, 88, 56];
+
+  let W=0, H=0, dpr=1;
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.width  = Math.floor(innerWidth  * dpr);
+    H = cv.height = Math.floor(innerHeight * dpr);
+    cv.style.width  = innerWidth + 'px';
+    cv.style.height = innerHeight + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle = BG; ctx.fillRect(0,0,W,H); ctx.restore();
+  }
+
+  let px=null, py=null, cx=null, cy=null;
+  let lastMove = 0, phase = 0;
+  const t0 = performance.now();
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const lerp = (a,b,k) => a + (b-a)*k;
+  const colorAt = k => `hsl(${lerp(A[0],B[0],k)} ${lerp(A[1],B[1],k)}% ${lerp(A[2],B[2],k)}%)`;
+
+  addEventListener('pointermove', e=>{
+    cx = e.clientX; cy = e.clientY; lastMove = performance.now();
+    if (hint.style.opacity !== '0') hint.style.opacity = '0';
+  }, {passive:true});
+  addEventListener('pointerdown', e=>{
+    cx = e.clientX; cy = e.clientY; lastMove = performance.now();
+  }, {passive:true});
+
+  function autoPoint(now){
+    const s = (now - t0) / 1000, w = innerWidth, h = innerHeight;
+    return {
+      x: w/2 + Math.sin(s*0.62)*w*0.30 + Math.sin(s*0.23)*w*0.10,
+      y: h/2 + Math.cos(s*0.47)*h*0.24 + Math.cos(s*0.31)*h*0.08
+    };
+  }
+
+  function frame(now){
+    requestAnimationFrame(frame);
+
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.globalAlpha = 0.045;
+    ctx.fillStyle = BG;
+    ctx.fillRect(0,0,W,H);
+    ctx.restore();
+
+    if (reduce) return;
+
+    let tx = cx, ty = cy;
+    if (cx === null || now - lastMove > 2200){ const p = autoPoint(now); tx = p.x; ty = p.y; }
+    if (tx === null) return;
+    if (px === null){ px = tx; py = ty; return; }
+
+    const dx = tx - px, dy = ty - py;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 0.4) return;
+
+    const nx = px + dx*0.28, ny = py + dy*0.28;
+    phase = (phase + 0.006) % 1;
+    const k = (Math.sin(phase * Math.PI * 2) + 1) / 2;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = colorAt(k);
+    ctx.lineWidth = Math.max(14, 34 - Math.min(dist, 60) * 0.22);
+    try { ctx.filter = 'blur(7px)'; } catch(e){}
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(nx, ny); ctx.stroke();
+    ctx.restore();
+
+    px = nx; py = ny;
+  }
+
+  addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
