@@ -574,7 +574,9 @@ npm install lucide-react
 |---|---|
 | **shadcn `button` 설치하지 않음** | 이 파일이 `Button`과 `buttonVariants`를 이미 export합니다. MVP에서 `Button`을 쓰는 곳은 **404 화면의 "목록으로 돌아가기" 하나뿐**이므로, 그 버튼은 이 파일의 `Button`을 씁니다. 자세한 근거는 `§6.4.1` |
 | `export { ... }` 위치 | 원본은 export문이 선언부보다 위에 있습니다. ESM에서 정상 동작하나, 가독성을 위해 **파일 맨 아래로 이동 권장** |
-| `MetalButton` | 사용하지 않음. 트리셰이킹으로 번들에서 빠지므로 삭제 불필요 |
+| **`LiquidButton`의 `asChild`** | 이 컴포넌트는 `Comp`에 자식을 4개(그림자 · 유리층 · 라벨 · `GlassFilter`) 넘기는데, Radix `Slot`은 단일 자식에만 props를 병합합니다. 따라서 `asChild`를 그냥 쓰면 런타임에서 `Slot failed to slot onto its children` 으로 **크래시**합니다. `@radix-ui/react-slot`의 **`Slottable`** 로 어느 자식이 루트가 될지 지정해야 `§S-1`이 요구하는 실제 `<a>` 렌더가 가능합니다 |
+| **`GlassFilter`의 위치** | 원본은 `GlassFilter`를 `Comp`의 자식으로 넣습니다. 그러면 `<svg>`가 버튼의 직계 자식이 되어 size 변형의 `has-[>svg]:px-*`가 **항상** 매치되고, `:has(>svg)`의 특이도가 더 높아 `§7`의 좌우 패딩 44px이 아이콘용 32px로 덮입니다. `GlassFilter`를 **버튼 밖 형제로 옮길 것.** SVG `<defs>`의 filter는 id로 참조되는 문서 전역 리소스라 버튼 안에 있을 필요가 없습니다 |
+| `MetalButton` | 사용하지 않음. **삭제할 것.** lint는 번들이 아니라 소스를 검사하므로, 트리셰이킹으로 번들에서 빠지더라도 미사용 코드의 `react-hooks/set-state-in-effect` 에러는 그대로 남습니다 |
 | `GlassFilter`의 SVG id | `#container-glass`가 하드코딩되어 있어 같은 페이지에 2개 이상이면 id 중복. 입장 화면에 1개만 쓰므로 MVP에서는 문제없음 |
 | **브라우저 호환** | `backdropFilter: url(#...)`은 Chrome/Edge에서만 동작. Safari·Firefox에서는 왜곡 없이 테두리·그림자만 보임 — **감수하고 진행**. 커서 궤적 자체는 모든 브라우저에서 보이므로 허용 가능한 수준 |
 

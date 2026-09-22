@@ -1,7 +1,32 @@
 "use client"
 
+/* ──────────────────────────────────────────────────────────────────────────
+   전달받은 파일입니다. 원본과 달라진 곳은 아래 5가지뿐이며, 각 지점에
+   "[원본과 다른 점 N]" 주석을 달아 두었습니다.
+
+   ① 유리 레이어 JSX를 glassLayers() 함수로 분리       (③을 위한 준비)
+   ② 유리층 rounded-md → rounded-full                  (PRD §7 / reference HTML)
+   ③ asChild일 때 Slottable 경로 추가                  ★ 크래시 수정
+   ④ <GlassFilter/>를 버튼 밖 형제로 이동              ★ 패딩 버그 수정
+   ⑤ 미사용 MetalButton 및 부속 코드 삭제              (약 205줄)
+
+   ③이 필요한 이유 — 이 컴포넌트는 Comp에 자식을 4개 넘기는데 Radix Slot은
+   단일 자식만 병합할 수 있어서, asChild를 쓰면 런타임에서 바로 터집니다.
+   PRD §S-1이 입장 버튼을 asChild로 <Link>를 감싸 실제 <a>로 렌더하라고
+   요구하므로 우회가 아니라 수정이 필요했습니다. 자세한 내용은 해당 지점 주석.
+
+   ④가 필요한 이유 — GlassFilter가 버튼의 직계 svg 자식이라 size 변형의
+   has-[>svg]:px-* 가 항상 매치되어, PRD §7의 패딩 44px이 아이콘용 32px로
+   덮이고 있었습니다. 모든 LiquidButton에 해당하는 원본 버그입니다.
+
+   ⑤를 삭제한 이유 — MetalButton은 이 사이트에서 쓰지 않습니다. PRD는 원래
+   "트리셰이킹으로 번들에서 빠지므로 삭제 불필요"였지만, lint는 번들이 아니라
+   소스를 검사하므로 미사용 코드여도 react-hooks/set-state-in-effect 에러가
+   납니다. PRD §6.4도 함께 수정했습니다.
+   ────────────────────────────────────────────────────────────────────────── */
+
 import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
+import { Slot, Slottable } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
@@ -100,6 +125,31 @@ function LiquidButton({
   }) {
   const Comp = asChild ? Slot : "button"
 
+  // [원본과 다른 점 ①] 유리 레이어들을 함수로 분리했습니다.
+  // 원본은 이 JSX를 Comp의 자식으로 그대로 나열했는데, asChild일 때 Slot에
+  // 자식이 4개(그림자 · 유리층 · 라벨 · GlassFilter) 넘어가면서 크래시했습니다.
+  // 내용·클래스·그림자 값은 원본 그대로이고, 감싸는 방식만 바뀌었습니다.
+  const glassLayers = (label: React.ReactNode) => (
+    <>
+      <div className="absolute top-0 left-0 z-0 h-full w-full rounded-full
+          shadow-[0_0_6px_rgba(0,0,0,0.03),0_2px_6px_rgba(0,0,0,0.08),inset_3px_3px_0.5px_-3px_rgba(0,0,0,0.9),inset_-3px_-3px_0.5px_-3px_rgba(0,0,0,0.85),inset_1px_1px_1px_-0.5px_rgba(0,0,0,0.6),inset_-1px_-1px_1px_-0.5px_rgba(0,0,0,0.6),inset_0_0_6px_6px_rgba(0,0,0,0.12),inset_0_0_2px_2px_rgba(0,0,0,0.06),0_0_12px_rgba(255,255,255,0.15)]
+      transition-all
+      dark:shadow-[0_0_8px_rgba(0,0,0,0.03),0_2px_6px_rgba(0,0,0,0.08),inset_3px_3px_0.5px_-3.5px_rgba(255,255,255,0.09),inset_-3px_-3px_0.5px_-3.5px_rgba(255,255,255,0.85),inset_1px_1px_1px_-0.5px_rgba(255,255,255,0.6),inset_-1px_-1px_1px_-0.5px_rgba(255,255,255,0.6),inset_0_0_6px_6px_rgba(255,255,255,0.12),inset_0_0_2px_2px_rgba(255,255,255,0.06),0_0_12px_rgba(0,0,0,0.15)]" />
+      {/* [원본과 다른 점 ②] 원본은 이 유리층이 rounded-md였습니다.
+          바깥 그림자 레이어는 rounded-full이고 reference/entry-screen.html의
+          .glass도 border-radius:999px이며 PRD §7도 rounded-full이므로,
+          알약 모양 뒤에 둥근 사각형 왜곡이 비치지 않도록 맞췄습니다. */}
+      <div
+        className="absolute top-0 left-0 isolate -z-10 h-full w-full overflow-hidden rounded-full"
+        style={{ backdropFilter: 'url("#container-glass")' }}
+      />
+
+      <div className="pointer-events-none z-10 ">
+        {label}
+      </div>
+    </>
+  )
+
   return (
     <>
       <Comp
@@ -110,20 +160,43 @@ function LiquidButton({
         )}
         {...props}
       >
-        <div className="absolute top-0 left-0 z-0 h-full w-full rounded-full
-            shadow-[0_0_6px_rgba(0,0,0,0.03),0_2px_6px_rgba(0,0,0,0.08),inset_3px_3px_0.5px_-3px_rgba(0,0,0,0.9),inset_-3px_-3px_0.5px_-3px_rgba(0,0,0,0.85),inset_1px_1px_1px_-0.5px_rgba(0,0,0,0.6),inset_-1px_-1px_1px_-0.5px_rgba(0,0,0,0.6),inset_0_0_6px_6px_rgba(0,0,0,0.12),inset_0_0_2px_2px_rgba(0,0,0,0.06),0_0_12px_rgba(255,255,255,0.15)]
-        transition-all
-        dark:shadow-[0_0_8px_rgba(0,0,0,0.03),0_2px_6px_rgba(0,0,0,0.08),inset_3px_3px_0.5px_-3.5px_rgba(255,255,255,0.09),inset_-3px_-3px_0.5px_-3.5px_rgba(255,255,255,0.85),inset_1px_1px_1px_-0.5px_rgba(255,255,255,0.6),inset_-1px_-1px_1px_-0.5px_rgba(255,255,255,0.6),inset_0_0_6px_6px_rgba(255,255,255,0.12),inset_0_0_2px_2px_rgba(255,255,255,0.06),0_0_12px_rgba(0,0,0,0.15)]" />
-        <div
-          className="absolute top-0 left-0 isolate -z-10 h-full w-full overflow-hidden rounded-md"
-          style={{ backdropFilter: 'url("#container-glass")' }}
-        />
+        {/* [원본과 다른 점 ③ — asChild 크래시 수정]
+            Radix Slot은 자식을 "하나"만 받아 거기에 props를 병합합니다.
+            원본처럼 자식 4개를 넘기면 asChild 사용 시 런타임에서 바로 터집니다:
+              "Slot failed to slot onto its children.
+               Expected a single React element child or `Slottable`."
+            PRD §S-1은 입장 버튼을 asChild로 <Link>를 감싸 실제 <a>로 렌더하라고
+            요구하므로(새 탭 열기·크롤링 가능해야 함) 이 경로가 반드시 필요합니다.
 
-        <div className="pointer-events-none z-10 ">
-          {children}
-        </div>
-        <GlassFilter />
+            해결: Slottable의 render-fn 형태를 씁니다.
+              - child={children}  → <Link>가 루트 엘리먼트(<a>)가 됩니다
+              - children={fn}     → fn이 받은 <Link>의 원래 자식(라벨 텍스트)을
+                                    유리 레이어 안에 끼워 넣습니다
+            결과 DOM:
+              <a class="..." href="/interviews">
+                <div 그림자 /><div 유리층 /><div class="...z-10">라벨</div><svg />
+              </a>
+            asChild가 아닐 때는 원본과 완전히 동일하게 <button>으로 렌더됩니다. */}
+        {asChild ? (
+          <Slottable child={children}>
+            {(label) => glassLayers(label)}
+          </Slottable>
+        ) : (
+          glassLayers(children)
+        )}
       </Comp>
+      {/* [원본과 다른 점 ④] 원본은 <GlassFilter/>를 Comp의 자식으로 넣었습니다.
+          그런데 GlassFilter는 <svg class="hidden">이라 버튼의 "직계 svg 자식"이
+          되고, 그 결과 size 변형에 들어 있는 has-[>svg]:px-* 가 항상 매치됩니다.
+          :has(>svg)는 특이도가 (0,2,0)이라 일반 px-* (0,1,0)를 이겨서,
+          PRD §7이 정한 좌우 패딩 44px 대신 아이콘 버튼용 32px이 적용됐습니다.
+          (실측으로 확인: padding-left가 44px가 아니라 32px로 계산됨)
+
+          has-[>svg]:px-* 는 "사용자가 아이콘을 넣었을 때"를 위한 것이므로,
+          내부 구현인 GlassFilter가 그 조건을 건드리면 안 됩니다. SVG <defs>의
+          filter는 id로 참조되는 문서 전역 리소스라 버튼 안에 있을 이유도 없어
+          형제로 옮겼습니다. url(#container-glass)는 그대로 동작합니다. */}
+      <GlassFilter />
     </>
   )
 }
@@ -172,210 +245,5 @@ function GlassFilter() {
     </svg>
   );
 }
-
-type ColorVariant =
-  | "default"
-  | "primary"
-  | "success"
-  | "error"
-  | "gold"
-  | "bronze";
-
-interface MetalButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ColorVariant;
-}
-
-const colorVariants: Record<
-  ColorVariant,
-  {
-    outer: string;
-    inner: string;
-    button: string;
-    textColor: string;
-    textShadow: string;
-  }
-> = {
-  default: {
-    outer: "bg-gradient-to-b from-[#000] to-[#A0A0A0]",
-    inner: "bg-gradient-to-b from-[#FAFAFA] via-[#3E3E3E] to-[#E5E5E5]",
-    button: "bg-gradient-to-b from-[#B9B9B9] to-[#969696]",
-    textColor: "text-white",
-    textShadow: "[text-shadow:_0_-1px_0_rgb(80_80_80_/_100%)]",
-  },
-  primary: {
-    outer: "bg-gradient-to-b from-[#000] to-[#A0A0A0]",
-    inner: "bg-gradient-to-b from-primary via-secondary to-muted",
-    button: "bg-gradient-to-b from-primary to-primary/40",
-    textColor: "text-white",
-    textShadow: "[text-shadow:_0_-1px_0_rgb(30_58_138_/_100%)]",
-  },
-  success: {
-    outer: "bg-gradient-to-b from-[#005A43] to-[#7CCB9B]",
-    inner: "bg-gradient-to-b from-[#E5F8F0] via-[#00352F] to-[#D1F0E6]",
-    button: "bg-gradient-to-b from-[#9ADBC8] to-[#3E8F7C]",
-    textColor: "text-[#FFF7F0]",
-    textShadow: "[text-shadow:_0_-1px_0_rgb(6_78_59_/_100%)]",
-  },
-  error: {
-    outer: "bg-gradient-to-b from-[#5A0000] to-[#FFAEB0]",
-    inner: "bg-gradient-to-b from-[#FFDEDE] via-[#680002] to-[#FFE9E9]",
-    button: "bg-gradient-to-b from-[#F08D8F] to-[#A45253]",
-    textColor: "text-[#FFF7F0]",
-    textShadow: "[text-shadow:_0_-1px_0_rgb(146_64_14_/_100%)]",
-  },
-  gold: {
-    outer: "bg-gradient-to-b from-[#917100] to-[#EAD98F]",
-    inner: "bg-gradient-to-b from-[#FFFDDD] via-[#856807] to-[#FFF1B3]",
-    button: "bg-gradient-to-b from-[#FFEBA1] to-[#9B873F]",
-    textColor: "text-[#FFFDE5]",
-    textShadow: "[text-shadow:_0_-1px_0_rgb(178_140_2_/_100%)]",
-  },
-  bronze: {
-    outer: "bg-gradient-to-b from-[#864813] to-[#E9B486]",
-    inner: "bg-gradient-to-b from-[#EDC5A1] via-[#5F2D01] to-[#FFDEC1]",
-    button: "bg-gradient-to-b from-[#FFE3C9] to-[#A36F3D]",
-    textColor: "text-[#FFF7F0]",
-    textShadow: "[text-shadow:_0_-1px_0_rgb(124_45_18_/_100%)]",
-  },
-};
-
-const metalButtonVariants = (
-  variant: ColorVariant = "default",
-  isPressed: boolean,
-  isHovered: boolean,
-  isTouchDevice: boolean,
-) => {
-  const colors = colorVariants[variant];
-  const transitionStyle = "all 250ms cubic-bezier(0.1, 0.4, 0.2, 1)";
-
-  return {
-    wrapper: cn(
-      "relative inline-flex transform-gpu rounded-md p-[1.25px] will-change-transform",
-      colors.outer,
-    ),
-    wrapperStyle: {
-      transform: isPressed
-        ? "translateY(2.5px) scale(0.99)"
-        : "translateY(0) scale(1)",
-      boxShadow: isPressed
-        ? "0 1px 2px rgba(0, 0, 0, 0.15)"
-        : isHovered && !isTouchDevice
-          ? "0 4px 12px rgba(0, 0, 0, 0.12)"
-          : "0 3px 8px rgba(0, 0, 0, 0.08)",
-      transition: transitionStyle,
-      transformOrigin: "center center",
-    },
-    inner: cn(
-      "absolute inset-[1px] transform-gpu rounded-lg will-change-transform",
-      colors.inner,
-    ),
-    innerStyle: {
-      transition: transitionStyle,
-      transformOrigin: "center center",
-      filter:
-        isHovered && !isPressed && !isTouchDevice ? "brightness(1.05)" : "none",
-    },
-    button: cn(
-      "relative z-10 m-[1px] rounded-md inline-flex h-11 transform-gpu cursor-pointer items-center justify-center overflow-hidden rounded-md px-6 py-2 text-sm leading-none font-semibold will-change-transform outline-none",
-      colors.button,
-      colors.textColor,
-      colors.textShadow,
-    ),
-    buttonStyle: {
-      transform: isPressed ? "scale(0.97)" : "scale(1)",
-      transition: transitionStyle,
-      transformOrigin: "center center",
-      filter:
-        isHovered && !isPressed && !isTouchDevice ? "brightness(1.02)" : "none",
-    },
-  };
-};
-
-const ShineEffect = ({ isPressed }: { isPressed: boolean }) => {
-  return (
-    <div
-      className={cn(
-        "pointer-events-none absolute inset-0 z-20 overflow-hidden transition-opacity duration-300",
-        isPressed ? "opacity-20" : "opacity-0",
-      )}
-    >
-      <div className="absolute inset-0 rounded-md bg-gradient-to-r from-transparent via-neutral-100 to-transparent" />
-    </div>
-  );
-};
-
-export const MetalButton = React.forwardRef<
-  HTMLButtonElement,
-  MetalButtonProps
->(({ children, className, variant = "default", ...props }, ref) => {
-  const [isPressed, setIsPressed] = React.useState(false);
-  const [isHovered, setIsHovered] = React.useState(false);
-  const [isTouchDevice, setIsTouchDevice] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
-  }, []);
-
-  const buttonText = children || "Button";
-  const variants = metalButtonVariants(
-    variant,
-    isPressed,
-    isHovered,
-    isTouchDevice,
-  );
-
-  const handleInternalMouseDown = () => {
-    setIsPressed(true);
-  };
-  const handleInternalMouseUp = () => {
-    setIsPressed(false);
-  };
-  const handleInternalMouseLeave = () => {
-    setIsPressed(false);
-    setIsHovered(false);
-  };
-  const handleInternalMouseEnter = () => {
-    if (!isTouchDevice) {
-      setIsHovered(true);
-    }
-  };
-  const handleInternalTouchStart = () => {
-    setIsPressed(true);
-  };
-  const handleInternalTouchEnd = () => {
-    setIsPressed(false);
-  };
-  const handleInternalTouchCancel = () => {
-    setIsPressed(false);
-  };
-
-  return (
-    <div className={variants.wrapper} style={variants.wrapperStyle}>
-      <div className={variants.inner} style={variants.innerStyle}></div>
-      <button
-        ref={ref}
-        className={cn(variants.button, className)}
-        style={variants.buttonStyle}
-        {...props}
-        onMouseDown={handleInternalMouseDown}
-        onMouseUp={handleInternalMouseUp}
-        onMouseLeave={handleInternalMouseLeave}
-        onMouseEnter={handleInternalMouseEnter}
-        onTouchStart={handleInternalTouchStart}
-        onTouchEnd={handleInternalTouchEnd}
-        onTouchCancel={handleInternalTouchCancel}
-      >
-        <ShineEffect isPressed={isPressed} />
-        {buttonText}
-        {isHovered && !isPressed && !isTouchDevice && (
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t rounded-lg from-transparent to-white/5" />
-        )}
-      </button>
-    </div>
-  );
-});
-
-MetalButton.displayName = "MetalButton";
 
 export { Button, buttonVariants, liquidbuttonVariants, LiquidButton }
