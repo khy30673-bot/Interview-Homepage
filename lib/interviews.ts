@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import yaml from "js-yaml";
+// js-yaml v5는 default export가 없습니다. 반드시 이름 있는 import를 쓰세요.
+import { load as loadYaml, CORE_SCHEMA } from "js-yaml";
 
 import { parseFrontmatter } from "@/lib/schema";
 
@@ -38,7 +39,7 @@ const POSTS_DIR = path.join(process.cwd(), "content", "posts");
 const matterOptions = {
   engines: {
     yaml: {
-      parse: (src: string) => yaml.load(src, { schema: yaml.CORE_SCHEMA }) as object,
+      parse: (src: string) => loadYaml(src, { schema: CORE_SCHEMA }) as object,
       stringify: () => {
         throw new Error("frontmatter 직렬화는 이 프로젝트에서 쓰지 않습니다");
       },
