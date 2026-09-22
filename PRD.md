@@ -914,7 +914,7 @@ import { mdxComponents } from "@/components/mdx/mdx-components";
 ### 성능·배포
 
 - [ ] `npm run build` 성공
-- [ ] 모든 인터뷰 페이지가 `○ (Static)`으로 표기
+- [ ] 모든 인터뷰 페이지가 정적 프리렌더로 표기 — Next 16은 `generateStaticParams`를 쓰는 페이지를 **`● (SSG)`**, 그 외 정적 페이지를 `○ (Static)`으로 구분합니다. 인터뷰 상세는 `● (SSG)`, `/`와 `/interviews`는 `○ (Static)`이면 통과
 
 ### 권한 표기
 
