@@ -1,0 +1,6 @@
+인터뷰 대상 사진을 이 폴더에 넣습니다.
+
+  public/avatars/kim-dohyun.jpg  →  MDX에 avatar: /avatars/kim-dohyun.jpg
+
+자세한 내용은 content/README.md의 "사진 넣기"를 참고하세요.
+빈 폴더는 git이 추적하지 않아 이 파일로 폴더를 남겨 둡니다.

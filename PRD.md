@@ -226,6 +226,7 @@
 │  ├─ site-header.tsx
 │  ├─ site-footer.tsx
 │  ├─ interview-marquee.tsx
+│  ├─ marquee-viewport.tsx          # 신규 — 화면 밖이면 마퀴 정지 (배터리)
 │  ├─ interviewee-card.tsx
 │  ├─ interview-list.tsx
 │  ├─ interview-list-item.tsx
@@ -246,7 +247,7 @@
 │  ├─ schema.ts                     # zod 검증
 │  ├─ interviews.ts                 # MDX 로더
 │  └─ tags.ts                       # 태그 수집
-├─ public/avatars/
+├─ public/avatars/                  # 인터뷰 대상 사진 (.gitkeep으로 폴더 유지)
 └─ site.config.ts
 ```
 
@@ -880,51 +881,62 @@ import { mdxComponents } from "@/components/mdx/mdx-components";
 
 ## 9. 검수 체크리스트
 
+> **검수 완료 — 2026-09-22.** 프로덕션 빌드(`npm run build` → `npm start`)에
+> 헤드리스 크로미움을 붙여 확인했습니다. 표기는 ✅ 통과 / ⚠️ 이 환경에서 확인 불가.
+
 ### 기능
 
-- [ ] 마퀴 카드 클릭 → 해당 인터뷰로 이동
-- [ ] 목록 카드 클릭 → 해당 인터뷰로 이동
-- [ ] 없는 slug 접속 → 404 화면
-- [ ] MDX 1건 추가 → 코드 수정 없이 목록·상세에 반영
-- [ ] 태그를 처음 보는 단어로 바꿔도 빌드 통과, 뱃지에 표시
-- [ ] `role`·`avatar`·`pullQuote`를 비워도 화면이 깨지지 않음
-- [ ] `date` 형식을 깨뜨리면 파일명·필드명이 담긴 에러로 빌드 중단
+- [x] ✅ 마퀴 카드 클릭 → 해당 인터뷰로 이동 — 애니메이션이 도는 상태에서 3건 전부 이동. hover 전 0.8~1.5px/300ms 움직이던 카드가 hover 중 0.00px/400ms로 정지
+- [x] ✅ 목록 카드 클릭 → 해당 인터뷰로 이동
+- [x] ✅ 없는 slug 접속 → 404 화면 (HTTP 404)
+- [x] ✅ MDX 1건 추가 → 코드 수정 없이 목록·상세에 반영 — 임시 파일 1건을 넣어 `content/`·`public/` 외 변경 0건으로 목록·상세·정적 생성 반영 확인 후 제거
+- [x] ✅ 태그를 처음 보는 단어로 바꿔도 빌드 통과, 뱃지에 표시 — 1회만 쓰인 태그는 파일명과 함께 경고만 출력
+- [x] ✅ `role`·`avatar`·`pullQuote`를 비워도 화면이 깨지지 않음 — 빌드 통과, HTTP 200, 해당 줄만 사라짐
+- [x] ✅ `date` 형식을 깨뜨리면 파일명·필드명이 담긴 에러로 빌드 중단
+      ```
+      content/posts/kim-dohyun.mdx: frontmatter 검증 실패
+        - date: YYYY-MM-DD 형식의 실제 날짜여야 합니다 (받은 값: "2026-8-14")
+      ```
+      존재하지 않는 날짜(`2026-02-31`)와 slug 중복도 동일하게 빌드 중단
 
 ### 입장 화면
 
-- [ ] 커서를 움직이면 블루→퍼플 궤적이 따라옴
-- [ ] 궤적이 버튼 뒤를 지날 때 일그러짐 (Chrome)
-- [ ] 2.2초간 멈추면 자동 궤적이 그려짐
-- [ ] `재탐색`만 굵은 검정, 밑줄이 1.2초 주기로 점멸
+- [x] ✅ 커서를 움직이면 블루→퍼플 궤적이 따라옴 — 캔버스 픽셀 판독 60,296px, 평균색 `[227,205,248]`(보라) / `[164,179,251]`(블루)로 sin 위상 왕복 확인
+- [x] ✅ 궤적이 버튼 뒤를 지날 때 일그러짐 (Chrome) — `backdrop-filter: url("#container-glass")` 적용, `CSS.supports` true, 필터 정의 존재
+- [x] ✅ 2.2초간 멈추면 자동 궤적이 그려짐 — 캔버스를 비운 뒤 10,615px 재도색
+- [x] ✅ `재탐색`만 굵은 검정, 밑줄이 1.2초 주기로 점멸 — weight 900 / `rgb(0,0,0)` / `blink 1.2s`
 
 ### 반응형
 
-- [ ] 360px: 가로 마퀴 노출(3D 없음), 세로 스크롤과 충돌 없음, 목록 1열, 가로 스크롤 없음
-- [ ] 768px: 목록 2열, 3D 세로 마퀴 노출
-- [ ] 1440px: 목록 3열, 본문 `max-w-3xl` 유지
+- [x] ✅ 360px: 가로 마퀴 노출(3D 없음), 세로 스크롤과 충돌 없음, 목록 1열, 가로 스크롤 없음 — `perspective: none`, `transform: none`, 가로 `marquee`
+- [x] ✅ 768px: 목록 2열, 3D 세로 마퀴 노출
+- [x] ✅ 1440px: 목록 3열, 본문 `max-w-3xl` 유지 — 실측 768px
+- [x] ✅ 360/768/1440px × 전 페이지(`/`·`/interviews`·상세·404) 가로 스크롤 없음
 
 ### 접근성
 
-- [ ] 키보드 Tab만으로 입장 → 목록 → 상세 도달
-- [ ] 키보드 Tab 3번 이내로 목록 첫 항목 도달 (PC·모바일 공통)
-- [ ] `prefers-reduced-motion` 켜면 마퀴·궤적·밑줄 모두 정지
-- [ ] 아바타 이미지에 `alt` 존재
-- [ ] 버튼 focus ring 표시
+- [x] ✅ 키보드 Tab만으로 입장 → 목록 → 상세 도달 — Tab→Enter→Tab→Enter
+- [x] ✅ 키보드 Tab 3번 이내로 목록 첫 항목 도달 (PC·모바일 공통) — 마퀴를 `aria-hidden` + `tabIndex={-1}`로 뺀 결과 1번
+- [x] ✅ `prefers-reduced-motion` 켜면 마퀴·궤적·밑줄 모두 정지 — 마퀴 `animationName: none`, 궤적 0px, 밑줄 `none`
+- [x] ✅ 아바타 이미지에 `alt` 존재 — `"{이름} 프로필 이미지"`. 샘플은 `avatar`가 비어 있어 이니셜로 폴백하므로, 임시 파일로 확인했습니다
+- [x] ✅ 버튼 focus ring 표시 — 입장 버튼 `outline: solid`, 헤더·목록 카드 ring
 
 ### 성능·배포
 
-- [ ] `npm run build` 성공
-- [ ] 모든 인터뷰 페이지가 정적 프리렌더로 표기 — Next 16은 `generateStaticParams`를 쓰는 페이지를 **`● (SSG)`**, 그 외 정적 페이지를 `○ (Static)`으로 구분합니다. 인터뷰 상세는 `● (SSG)`, `/`와 `/interviews`는 `○ (Static)`이면 통과
+- [x] ✅ `npm run build` 성공
+- [x] ✅ 모든 인터뷰 페이지가 정적 프리렌더로 표기 — 인터뷰 상세 3건 `● (SSG)`, `/`와 `/interviews`·404 `○ (Static)`
+- [x] ✅ `npx tsc --noEmit` 통과, `npm run lint` 통과
+- [x] ✅ 마퀴가 화면 밖으로 나가면 `animation-play-state: paused`, 다시 들어오면 `running`
 
 ### 권한 표기
 
-- [ ] 모든 페이지 푸터에 저작권 표기
-- [ ] 상세 하단에 기획·질문·정리 주체(희연) + 인용 안내
+- [x] ✅ 모든 페이지 푸터에 저작권 표기 — 입장 화면은 자체 푸터(`© 2026 희연`), 그 외 전 페이지는 공통 푸터 전문
+- [x] ✅ 상세 하단에 기획·질문·정리 주체(희연) + 인용 안내
 
 ### 브라우저
 
-- [ ] Chrome: 유리 왜곡 확인
-- [ ] Safari: 왜곡이 없어도 버튼이 정상으로 읽힘, 궤적은 정상 표시
+- [x] ✅ Chrome: 유리 왜곡 확인 — `backdrop-filter: url()` 지원, 궤적이 버튼 뒤를 지남
+- [ ] ⚠️ Safari: 왜곡이 없어도 버튼이 정상으로 읽힘, 궤적은 정상 표시 — **이 환경에 WebKit이 없어 확인하지 못했습니다.** 다만 (1) 왜곡과 무관한 테두리·그림자 레이어가 별도 div로 존재하고 (2) 궤적은 순수 canvas 2D라 엔진과 무관합니다. 배포 후 실제 Safari에서 한 번 봐 주세요
 
 ---
 
