@@ -15,16 +15,22 @@ type InterviewListProps = {
   interviews: Interview[];
   /** slug → 사이트 전체 기준으로 정렬된 태그 */
   tagsBySlug: Record<string, string[]>;
+  /** 섹션 헤딩. `/interviews/all`은 "전체 인터뷰"를 씁니다 */
+  heading?: string;
 };
 
-export function InterviewList({ interviews, tagsBySlug }: InterviewListProps) {
+export function InterviewList({
+  interviews,
+  tagsBySlug,
+  heading = "인터뷰 목록",
+}: InterviewListProps) {
   return (
     <section aria-labelledby="interview-list-heading">
       <h2
         id="interview-list-heading"
         className="text-lg font-semibold tracking-tight"
       >
-        인터뷰 목록
+        {heading}
       </h2>
 
       {interviews.length === 0 ? (
@@ -32,7 +38,8 @@ export function InterviewList({ interviews, tagsBySlug }: InterviewListProps) {
           아직 공개된 인터뷰가 없습니다.
         </p>
       ) : (
-        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        // 카드 사이 간격 — 모바일 12px / PC 16px
+        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
           {interviews.map((interview) => (
             <InterviewListItem
               key={interview.slug}

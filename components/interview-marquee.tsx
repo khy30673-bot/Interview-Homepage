@@ -32,13 +32,21 @@ import type { Interview } from "@/lib/interviews";
 
 type InterviewMarqueeProps = {
   interviews: Interview[];
+  /**
+   * 바깥 여백. 화면 폭을 어떻게 쓸지는 이 컴포넌트가 아니라 페이지가 정합니다.
+   * (모바일은 컨테이너 패딩을 음수 마진으로 뚫어 화면 끝까지, PC는 목록과 같은 폭)
+   */
+  className?: string;
 };
 
-export function InterviewMarquee({ interviews }: InterviewMarqueeProps) {
+export function InterviewMarquee({
+  interviews,
+  className,
+}: InterviewMarqueeProps) {
   if (interviews.length === 0) return null;
 
   return (
-    <MarqueeViewport aria-hidden>
+    <MarqueeViewport aria-hidden className={className}>
       <div className="relative flex h-[142px] w-full items-center overflow-hidden md:h-[196px]">
         <Marquee
           pauseOnHover

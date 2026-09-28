@@ -29,8 +29,9 @@ export function InterviewListItem({ interview, tags }: InterviewListItemProps) {
       href={`/interviews/${slug}`}
       className="group rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
     >
-      <Card className="h-full gap-4 py-5 transition-colors group-hover:border-neutral-400">
-        <div className="flex items-center gap-3 px-5">
+      {/* 카드 안쪽 패딩 — 모바일 14px 15px / PC 20px */}
+      <Card className="h-full gap-4 py-[14px] transition-colors group-hover:border-neutral-400 md:py-5">
+        <div className="flex items-center gap-3 px-[15px] md:px-5">
           <Avatar className="size-9">
             {avatar && (
               <AvatarImage src={avatar} alt={`${name} 프로필 이미지`} />
@@ -46,7 +47,7 @@ export function InterviewListItem({ interview, tags }: InterviewListItemProps) {
           </div>
         </div>
 
-        <div className="px-5">
+        <div className="px-[15px] md:px-5">
           <h3 className="line-clamp-2 text-base leading-snug font-semibold text-balance">
             {title}
           </h3>
@@ -56,7 +57,7 @@ export function InterviewListItem({ interview, tags }: InterviewListItemProps) {
         </div>
 
         {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 px-5">
+          <div className="flex flex-wrap gap-1.5 px-[15px] md:px-5">
             {/* 태그는 표시 전용입니다. 링크가 아니며 최대 4개입니다 (PRD §S-2). */}
             {tags.slice(0, 4).map((tag) => (
               <Badge key={tag} variant="secondary">

@@ -26,7 +26,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         {/* 헤더와 푸터는 입장 화면(`/`)에서 스스로 숨습니다 (PRD §S-4 / §S-1) */}
         <SiteHeader />
-        <main className="flex-1">{children}</main>
+        {/* flex 컨테이너로 둡니다. 그래야 페이지가 flex-1로 남은 높이를 채우고
+            그 안에서 세로 가운데 정렬을 할 수 있습니다 (S-2). main에 높이가
+            flex로만 잡혀 있으면 자식의 min-height:100%가 해소되지 않습니다. */}
+        <main className="flex flex-1 flex-col">{children}</main>
         <SiteFooter />
       </body>
     </html>
