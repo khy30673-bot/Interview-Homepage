@@ -74,7 +74,7 @@ export default async function InterviewDetailPage({
         <MDXRemote source={interview.body} components={mdxComponents} />
       </div>
 
-      <CreditNotice date={interview.date} />
+      <CreditNotice />
 
       <div className="mt-10">
         <Link
