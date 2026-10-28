@@ -3,6 +3,9 @@ export const siteConfig = {
   nameEmphasis: "재탐색",
   entryCta: "인터뷰 보러 가기",
   owner: "희연",
+  // 푸터·입장 화면의 © 표기와 저작권자 이름
+  copyrightHolder:
+    "「서울시공익활동지원센터 당신 옆의 공익 활동, 학습 조직형 커뮤니티 진로를 재탐색합니다」",
   copyrightYear: 2026,
   creditLine: "기획 · 질문 · 정리",
   // 인터뷰 상세 하단 "기획 · 질문 · 정리" 옆에 표시되는 이름 (푸터의 owner와는 별개)
