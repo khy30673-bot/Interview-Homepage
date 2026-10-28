@@ -45,7 +45,7 @@ export default function Home() {
       </div>
 
       <p className="pointer-events-none fixed inset-x-0 bottom-[18px] z-[2] px-4 text-center text-balance text-[11.5px] text-[rgba(40,38,34,0.4)]">
-        © {siteConfig.copyrightYear} {siteConfig.copyrightHolder}
+        {siteConfig.siteMakerLine}
       </p>
     </div>
   );
