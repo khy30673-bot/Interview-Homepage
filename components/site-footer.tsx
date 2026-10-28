@@ -21,9 +21,7 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-border">
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <p className="text-[11.5px] leading-relaxed text-muted-foreground text-pretty">
-          © {siteConfig.copyrightYear}. 이 사이트의 인터뷰 기획·질문·정리
-          저작권은 {siteConfig.copyrightHolder}에 있습니다. 무단 전재 및
-          재배포를 금지합니다.
+          이 사이트의 저작권은 {siteConfig.copyrightHolder}에 있습니다.
         </p>
       </div>
     </footer>
